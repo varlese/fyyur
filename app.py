@@ -29,6 +29,12 @@ migrate = Migrate(app, db)
 # Models.
 #----------------------------------------------------------------------------#
 
+# Creating relationship to connect Genre categories to Venue table
+venue_genre_relationship = db.Table('venue_genre_relationship',
+    db.Column('genre_id', db.Integer, db.ForeignKey('Genre.id'), primary_key=True),
+    db.Column('venue_id', db.Integer, db.ForeignKey('Venue.id'), primary_key=True)
+)
+
 class Venue(db.Model):
     __tablename__ = 'Venue'
 
@@ -40,8 +46,21 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    genres = db.relationship(
+      'Genre', 
+      secondary=venue_genre_relationship,
+      lazy='subquery',
+      backref=db.backref('Venue', lazy=True)
+    )
+    ## Fields that need to be added: website, true/false seekign talent, image, slug
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
+
+# Creating relationship to connect Genre categories to Artist table
+artist_genre_relationship = db.Table('artist_genre_relationship',
+    db.Column('genre_id', db.Integer, db.ForeignKey('Genre.id'), primary_key=True),
+    db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id'), primary_key=True)
+)
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -51,11 +70,24 @@ class Artist(db.Model):
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    genres = db.relationship(
+      'Genre', 
+      secondary=artist_genre_relationship,
+      lazy='subquery',
+      backref=db.backref('Artist', lazy=True)
+    )
+    ## Fields that need to be added: website, true/false seeking venues, image, slug
 
-    # DONE: implement any missing fields, as a database migration using Flask-Migrate
+    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+
+class Genre(db.Model):
+  __tablename__ = 'Genre'
+
+  id = db.Column(db.Integer, primary_key=True)
+  name = db.Column(db.String(), nullable=False)
+  slug = db.Column(db.String(), unique=True, nullable=False)
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
@@ -81,7 +113,7 @@ app.jinja_env.filters['datetime'] = format_datetime
 def index():
   return render_template('pages/home.html')
 
-
+#----------------------------------------------------------------------------#
 #  Venues
 #  ----------------------------------------------------------------
 
