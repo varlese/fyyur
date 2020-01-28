@@ -1,4 +1,5 @@
-"""empty message
+"""Add missing fields to Arist and Venue;
+Create relationship between Show model and Artist and Venue models.
 
 Revision ID: 67ed0198ca6c
 Revises: 

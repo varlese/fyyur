@@ -5,7 +5,7 @@
 import json
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, Response, flash, redirect, url_for, abort
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -13,6 +13,8 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+import sys, traceback
+
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -24,6 +26,29 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 # DONE: connect to a local postgresql database
+
+#----------------------------------------------------------------------------#
+# Tools
+#----------------------------------------------------------------------------#
+
+# Sanitize genre names for slugs
+# Source = https://www.peterbe.com/plog/fastest-python-function-to-slugify-a-string
+
+def slugify(text):
+    """
+    Turn the text content of a header into a slug for use in an ID
+    """
+    non_url_safe = ['"', '#', '$', '%', '&', '+',
+                ',', '/', ':', ';', '=', '?',
+                '@', '[', '\\', ']', '^', '`',
+                '{', '|', '}', '~', "'"]
+    non_safe = [c for c in text if c in non_url_safe]
+    if non_safe:
+        for c in non_safe:
+            text = text.replace(c, '')
+    # Strip leading, trailing and multiple whitespace, convert remaining whitespace to _
+    text = u'_'.join(text.split())
+    return text.lower()
 
 #----------------------------------------------------------------------------#
 # Models.
@@ -44,17 +69,26 @@ class Venue(db.Model):
     state = db.Column(db.String(120))
     address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
+    website = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    seeking_talent = db.Column(db.Boolean(), default=False)
+    slug = db.Column(db.String(120))
     genres = db.relationship(
       'Genre', 
       secondary=venue_genre_relationship,
       lazy='subquery',
       backref=db.backref('Venue', lazy=True)
     )
-    ## Fields that need to be added: website, true/false seekign talent, image, slug
+    shows = db.relationship(
+      'Show',
+      lazy='subquery',
+      backref=db.backref('Venue', lazy=True)
+    )
+    def __repr__(self):
+      return f"<Venue id='{self.id}' name='{self.name}'>"
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    # DONE: implement any missing fields, as a database migration using Flask-Migrate
 
 # Creating relationship to connect Genre categories to Artist table
 artist_genre_relationship = db.Table('artist_genre_relationship',
@@ -70,17 +104,24 @@ class Artist(db.Model):
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
+    website = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    seeking_venues = db.Column(db.Boolean(), default=False)
+    slug = db.Column(db.String(120))
     genres = db.relationship(
       'Genre', 
       secondary=artist_genre_relationship,
       lazy='subquery',
       backref=db.backref('Artist', lazy=True)
     )
-    ## Fields that need to be added: website, true/false seeking venues, image, slug
+    shows = db.relationship(
+      'Show',
+      lazy='subquery',
+      backref=db.backref('Artist', lazy=True)
+    )
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    # DONE: implement any missing fields, as a database migration using Flask-Migrate
 
 class Genre(db.Model):
   __tablename__ = 'Genre'
@@ -89,7 +130,15 @@ class Genre(db.Model):
   name = db.Column(db.String(), nullable=False)
   slug = db.Column(db.String(), unique=True, nullable=False)
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+# DONE Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+
+class Show(db.Model):
+  __tablename__ = 'Show'
+
+  id = db.Column(db.Integer, primary_key=True)
+  datetime = db.Column(db.DateTime, nullable=False)
+  artist_id = db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id'))
+  venue_id = db.Column('venue_id', db.Integer, db.ForeignKey('Venue.id'))
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -161,6 +210,7 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
+  print(Venue.query.get( venue_id ))
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
   data1={
@@ -253,6 +303,57 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
+  venue_data = {
+    'name': request.form.get('name'),
+    'city': request.form.get('city'),
+    'state': request.form.get('state'),
+    'address': request.form.get('address'),
+    'phone': request.form.get('phone'),
+    'genres': request.form.get('genres'),
+    'image_link': request.form.get('image_link'),
+    'website': request.form.get('website'),
+    'facebook_link': request.form.get('facebook_link'),
+    'seeking_talent': request.form.get('seeking_talent')
+  }
+  
+  error = False
+  body = {}
+  try:
+    genres = []
+    for genre in venue_data['genres']:
+      genres.append( Genre.query.get( genre ) )
+
+    venue = Venue(
+      name = venue_data['name'],
+      slug = slugify(venue_data['name']),
+      city = venue_data['city'],
+      state = venue_data['state'],
+      address = venue_data['address'],
+      phone = venue_data['phone'],
+      genres = genres,
+      image_link = venue_data['image_link'],
+      website = venue_data['website'],
+      facebook_link = venue_data['facebook_link'],
+      seeking_talent = bool(venue_data['seeking_talent'])
+    )
+    db.session.add(venue)
+    db.session.commit()
+    body['id'] = venue.id
+  except:
+    error = True
+    db.session.rollback()
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+
+    print("*** print_exception:")
+    traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+
+  finally:
+    db.session.close()
+  if not error:
+    return redirect(url_for('show_venue', venue_id=int(body['id'])))
+  else:
+    abort(500)
+
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
 
