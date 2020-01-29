@@ -2,6 +2,15 @@ from datetime import datetime
 from flask_wtf import Form
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
 from wtforms.validators import DataRequired, AnyOf, URL
+from models import Genre
+
+# load genres from database for New Artist and New Venue forms
+
+def get_genres_for_form():
+    genre_choices = []
+    for genre in Genre.query.all():
+        genre_choices.append(( genre.id, genre.name ))
+    return genre_choices
 
 class ShowForm(Form):
     artist_id = StringField(
@@ -90,29 +99,8 @@ class VenueForm(Form):
         'image_link'
     )
     genres = SelectMultipleField(
-        # TODO implement enum restriction
         'genres', validators=[DataRequired()],
-        choices=[
-            (1, 'Alternative'),
-            (2, 'Blues'),
-            (3, 'Classical'),
-            (4, 'Country'),
-            (4, 'Electronic'),
-            (5, 'Folk'),
-            (6, 'Funk'),
-            (7, 'Hip-Hop'),
-            (8, 'Heavy Metal'),
-            (9, 'Instrumental'),
-            (10, 'Jazz'),
-            (11, 'Musical Theatre'),
-            (12, 'Pop'),
-            (13, 'Punk'),
-            (14, 'R&B'),
-            (15, 'Reggae'),
-            (16, 'Rock n Roll'),
-            (17, 'Soul'),
-            (18, 'Other'),
-        ]
+        choices=get_genres_for_form()
     )
     website = StringField(
         'website', validators=[URL()]
@@ -122,6 +110,9 @@ class VenueForm(Form):
     )
     seeking_talent = BooleanField(
         'seeking_talent'
+    )
+    seeking_description = StringField(
+        'seeking_description'
     )
 
 class ArtistForm(Form):
@@ -195,29 +186,8 @@ class ArtistForm(Form):
         'image_link'
     )
     genres = SelectMultipleField(
-        # TODO implement enum restriction
         'genres', validators=[DataRequired()],
-        choices=[
-            ('Alternative', 'Alternative'),
-            ('Blues', 'Blues'),
-            ('Classical', 'Classical'),
-            ('Country', 'Country'),
-            ('Electronic', 'Electronic'),
-            ('Folk', 'Folk'),
-            ('Funk', 'Funk'),
-            ('Hip-Hop', 'Hip-Hop'),
-            ('Heavy Metal', 'Heavy Metal'),
-            ('Instrumental', 'Instrumental'),
-            ('Jazz', 'Jazz'),
-            ('Musical Theatre', 'Musical Theatre'),
-            ('Pop', 'Pop'),
-            ('Punk', 'Punk'),
-            ('R&B', 'R&B'),
-            ('Reggae', 'Reggae'),
-            ('Rock n Roll', 'Rock n Roll'),
-            ('Soul', 'Soul'),
-            ('Other', 'Other'),
-        ]
+        choices=get_genres_for_form()
     )
     website = StringField(
         'website', validators=[URL()]
@@ -226,8 +196,9 @@ class ArtistForm(Form):
         # TODO implement enum restriction
         'facebook_link', validators=[URL()]
     )
-    seeking_venue = BooleanField(
-        'seeking_venue'
+    seeking_venues = BooleanField(
+        'seeking_venues'
     )
-
-# DONE IMPLEMENT NEW ARTIST FORM AND NEW SHOW FORM
+    seeking_description = StringField(
+        'seeking_description'
+    )

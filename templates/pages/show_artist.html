@@ -11,7 +11,7 @@
 		</p>
 		<div class="genres">
 			{% for genre in artist.genres %}
-			<span class="genre">{{ genre }}</span>
+			<span class="genre genre-{{genre.name}}">{{ genre.name }}</span>
 			{% endfor %}
 		</div>
 		<p>
@@ -26,12 +26,14 @@
 		<p>
 			<i class="fab fa-facebook-f"></i> {% if artist.facebook_link %}<a href="{{ artist.facebook_link }}" target="_blank">{{ artist.facebook_link }}</a>{% else %}No Facebook Link{% endif %}
         </p>
-		{% if artist.seeking_venue %}
+		{% if artist.seeking_venues %}
 		<div class="seeking">
 			<p class="lead">Currently seeking performance venues</p>
+			{% if artist.seeking_description %}
 			<div class="description">
 				<i class="fas fa-quote-left"></i> {{ artist.seeking_description }} <i class="fas fa-quote-right"></i>
 			</div>
+			{% endif %}
 		</div>
 		{% else %}	
 		<p class="not-seeking">
