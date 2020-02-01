@@ -2,17 +2,18 @@
 # Imports
 #----------------------------------------------------------------------------#
 
-import json
-import dateutil.parser
 import babel
+import datetime
+import dateutil.parser
 from flask import Flask, render_template, request, Response, flash, redirect, url_for, abort
+from flask_migrate import Migrate
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf import Form
+import json
 from sqlalchemy.sql import exists
-from flask_migrate import Migrate
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import Form
 import sys, traceback
 from utils import *
 
@@ -84,8 +85,25 @@ def search_venues():
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
   venue = Venue.query.get(venue_id)
+
+  past_shows = list(filter(lambda x: x.start_time < datetime.today(), venue.shows))
+  upcoming_shows = list(filter(lambda x: x.start_time >= datetime.today(), venue.shows))
+
+  past_shows = list(map(lambda x: x.with_artist(), past_shows))
+  upcoming_shows = list(map(lambda x: x.with_artist(), upcoming_shows))
+
+  data = venue.to_dict()
+  data['upcoming_shows'] = upcoming_shows
+  data['upcoming_shows_count'] = len(upcoming_shows)
+  data['past_shows'] = past_shows
+  data['past_shows_count'] = len(past_shows)
+
   if venue:
-    return render_template('pages/show_venue.html', venue=venue, venue_edit_link = url_for('edit_venue', venue_id=venue_id))
+    return render_template(
+      'pages/show_venue.html',
+      venue=data,
+      venue_edit_link = url_for('edit_venue', venue_id=venue_id)
+    )
   else:
     abort(404)
 
@@ -153,9 +171,6 @@ def create_venue_submission():
     flash('An error occurred. Venue ' + venue_data['name'] + ' could not be created.')
     abort(500)
 
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
   return render_template('pages/home.html')
 
 # Edit a venue
@@ -230,15 +245,10 @@ def delete_venue(venue_id):
 
     print("*** print_exception:")
     traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
-
   finally:
     db.session.close()
 
   return redirect(url_for('venues'))
-
-  # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-  # clicking that button delete it from the db then redirect the user to the homepage
-  return None
 
 #  ----------------------------------------------------------------
 #  Artists
@@ -268,8 +278,25 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   artist = Artist.query.get(artist_id)
+
+  past_shows = list(filter(lambda x: x.start_time < datetime.today(), artist.shows))
+  upcoming_shows = list(filter(lambda x: x.start_time >= datetime.today(), artist.shows))
+
+  past_shows = list(map(lambda x: x.with_venue(), past_shows))
+  upcoming_shows = list(map(lambda x: x.with_venue(), upcoming_shows))
+
+  data = artist.to_dict()
+  data['upcoming_shows'] = upcoming_shows
+  data['upcoming_shows_count'] = len(upcoming_shows)
+  data['past_shows'] = past_shows
+  data['past_shows_count'] = len(past_shows)
+
   if artist:
-    return render_template('pages/show_artist.html', artist=artist, artist_edit_link = url_for('edit_artist', artist_id=artist_id))
+    return render_template(
+      'pages/show_artist.html',
+      artist=data,
+      artist_edit_link = url_for('edit_artist', artist_id=artist_id)
+    )
   else:
     abort(404)
 
@@ -330,16 +357,12 @@ def create_artist_submission():
   finally:
     db.session.close()
   if not error:
+    flash('Artist ' + request.form['name'] + ' was successfully created!')
     return redirect(url_for('show_artist', artist_id=int(body['id'])))
   else:
+    flash('An error occurred. ' + artist_data.name + ' could not be added.')
     abort(500)
 
-  # TODO: modify data to be the data object returned from db insertion
-
-  # on successful db insert, flash success
-  flash('Artist ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
   return render_template('pages/home.html')
 
 # Edit artist 
@@ -414,15 +437,10 @@ def delete_artist(artist_id):
 
     print("*** print_exception:")
     traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
-
   finally:
     db.session.close()
 
   return redirect(url_for('artists'))
-
-  # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-  # clicking that button delete it from the db then redirect the user to the homepage
-  return None
 
 #  ----------------------------------------------------------------
 #  Shows
@@ -430,10 +448,8 @@ def delete_artist(artist_id):
 
 @app.route('/shows')
 def shows():
-  # displays list of shows at /shows
-  # TODO: replace with real venues data.
-  #       num_shows should be aggregated based on number of upcoming shows per venue.
-  shows = Show.query.all()
+  today = datetime(datetime.today().year, datetime.today().month, datetime.today().day)
+  shows = Show.query.filter(Show.start_time >= today).all()
   data = []
   for show in shows:
     data.append({

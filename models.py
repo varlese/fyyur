@@ -69,8 +69,26 @@ class Venue(db.Model):
       lazy = 'subquery',
       backref = db.backref('Venue', lazy=True)
     )
+
     def __repr__(self):
       return f"<Venue id='{self.id}' name='{self.name}'>"
+
+    def to_dict(self):
+      return {
+        'id': self.id,
+        'slug': self.slug,
+        'name': self.name,
+        'city': self.city,
+        'state': self.state,
+        'address': self.address,
+        'phone': self.phone,
+        'genres': self.genres,
+        'image_link': self.image_link,
+        'website': self.website,
+        'facebook_link': self.facebook_link,
+        'seeking_talent': self.seeking_talent,
+        'seeking_description': self.seeking_description,
+      }
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -97,6 +115,22 @@ class Artist(db.Model):
       lazy = 'subquery',
       backref = db.backref('Artist', lazy = True)
     )
+
+    def to_dict(self):
+      return {
+        'id': self.id,
+        'slug': self.slug,
+        'name': self.name,
+        'city': self.city,
+        'state': self.state,
+        'phone': self.phone,
+        'genres': self.genres,
+        'image_link': self.image_link,
+        'website': self.website,
+        'facebook_link': self.facebook_link,
+        'seeking_venues': self.seeking_venues,
+        'seeking_description': self.seeking_description,
+      }
 
 # Creating Show database
 
