@@ -207,5 +207,12 @@ h2.monospace {
   width: 100%;
 }
 .subtitle {
-  opacity: 0.5;
+  opacity: 1;
+}
+.subtitle a,
+.subtitle a:visited,
+.subtitle a:active {
+  opacity:1;
+  font-weight:500;
+  color: #ff8c3a;
 }

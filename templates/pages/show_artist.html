@@ -7,7 +7,7 @@
 			{{ artist.name }}
 		</h1>
 		<p class="subtitle">
-			ID: {{ artist.id }}
+			<a href="{{ artist_edit_link }}">ID: {{ artist.id }} (Edit)</a>
 		</p>
 		<div class="genres">
 			{% for genre in artist.genres %}

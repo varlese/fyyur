@@ -4,6 +4,7 @@
   <div class="form-wrapper">
     <form class="form" method="post" action="/artists/{{artist.id}}/edit">
       <h3 class="form-heading">Edit artist <em>{{ artist.name }}</em></h3>
+      <a href="{{ delete_artist_link }}" class="btn btn-warning">Delete</a>
       <div class="form-group">
         <label for="name">Name</label>
         {{ form.name(class_ = 'form-control', autofocus = true) }}
@@ -29,9 +30,25 @@
         {{ form.genres(class_ = 'form-control', placeholder='Genres, separated by commas', id=form.state, autofocus = true) }}
       </div>
       <div class="form-group">
+          <label for="image_link">Image URL:</label>
+          {{ form.image_link(class_='form-control', placeholder='http://', autofocus = true) }}
+        </div>
+      <div class="form-group">
+          <label for="website">Website</label>
+          {{ form.website(class_='form-control', placeholder='http://', autofocus = true) }}
+        </div>
+      <div class="form-group">
           <label for="genres">Facebook Link</label>
           {{ form.facebook_link(class_ = 'form-control', placeholder='http://', id=form.state, autofocus = true) }}
         </div>
+        <div class="form-group">
+            <label for="seeking_venues">Seeking venues?</label>
+            {{ form.seeking_venues }}
+          </div>
+        <div class="form-group">
+            <label for="seeking_description">Describe</label>
+            {{ form.seeking_description(class_ = 'form-control', autofocus = true) }}
+          </div>
       <input type="submit" value="Edit Artist" class="btn btn-primary btn-lg btn-block">
     </form>
   </div>

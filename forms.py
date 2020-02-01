@@ -101,7 +101,9 @@ class VenueForm(Form):
         'image_link'
     )
     genres = SelectMultipleField(
-        'genres', validators=[DataRequired()],
+        'genres', 
+        validators=[DataRequired()],
+        coerce=int,
         choices=get_genres_for_form()
     )
     website = StringField(
@@ -120,27 +122,14 @@ class VenueForm(Form):
 ## Artist form
 
 class ArtistForm(Form):
-    def set_artist(self, id):
-        self.artist = Artist.query.get(id)
-
-    def has_artist(self):
-        if self.artist:
-            return True
-        else:
-            return False
-
     name = StringField(
         'name',
         validators=[DataRequired()]
     )
-    if has_artist():
-        name.default = self.artist.name
 
     city = StringField(
         'city', validators=[DataRequired()]
     )
-    if has_artist():
-        city.default = self.artist.city
 
     state = SelectField(
         'state', validators=[DataRequired()],
@@ -198,49 +187,34 @@ class ArtistForm(Form):
             ('WY', 'WY'),
         ]
     )
-    if has_artist():
-        state.default = self.artist.state
+
     # TODO implement validation logic for state
     phone = StringField(
         'phone'
     )
-    if has_artist():
-        phone.default = self.artist.phone
 
     image_link = StringField(
         'image_link'
     )
-    if has_artist():
-        image_link.default = self.artist.image_link
 
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
         choices=get_genres_for_form()
     )
-    if has_artist():
-        genres.default = self.artist.genres
 
     website = StringField(
         'website', validators=[URL()]
     )
-    if has_artist():
-        website.default = self.artist.website
 
     facebook_link = StringField(
         # TODO implement enum restriction
         'facebook_link', validators=[URL()]
     )
-    if has_artist():
-        facebook_link.default = self.artist.facebook_link
 
     seeking_venues = BooleanField(
         'seeking_venues'
     )
-    if has_artist():
-        seeking_venues.default = self.artist.seeking_venues
 
     seeking_description = StringField(
         'seeking_description'
     )
-    if has_artist():
-        seeking_description.default = self.artist.seeking_description

@@ -7,7 +7,7 @@
 			{{ venue.name }}
 		</h1>
 		<p class="subtitle">
-			ID: {{ venue.id }}
+			<a href="{{ venue_edit_link }}">ID: {{ venue.id }} (Edit)</a>
 		</p>
 		<div class="genres" >
 			{% for genre in venue.genres %}
