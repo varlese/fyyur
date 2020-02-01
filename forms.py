@@ -12,12 +12,36 @@ def get_genres_for_form():
         genre_choices.append(( genre.id, genre.name ))
     return genre_choices
 
+# load artists for show form
+
+def get_artists_for_form():
+    artist_choices = [
+        ('', 'Select Artist')
+    ]
+    for artist in Artist.query.all():
+        artist_choices.append(( artist.id, artist.name ))
+    return artist_choices
+
+# load venues for show form 
+
+def get_venues_for_form():
+    venue_choices = [
+        ('', 'Select Venue')
+    ]
+    for venue in Venue.query.all():
+        venue_choices.append(( venue.id, venue.name ))
+    return venue_choices
+
 class ShowForm(Form):
-    artist_id = StringField(
-        'artist_id'
+    artist_id = SelectField(
+        'artist_id',
+        validators=[DataRequired()],
+        choices = get_artists_for_form()
     )
-    venue_id = StringField(
-        'venue_id'
+    venue_id = SelectField(
+        'venue_id',
+        validators=[DataRequired()],
+        choices = get_venues_for_form()
     )
     start_time = DateTimeField(
         'start_time',
