@@ -34,9 +34,9 @@ from forms import *
 def format_datetime(value, format='medium'):
   date = dateutil.parser.parse(value)
   if format == 'full':
-      format="EEEE MMMM, d, y 'at' h:mma"
+      format = "EEEE MMMM, d, y 'at' h:mma"
   elif format == 'medium':
-      format="EE MM, dd, y h:mma"
+      format = "EE MM, dd, y h:mma"
   return babel.dates.format_datetime(date, format)
 
 app.jinja_env.filters['datetime'] = format_datetime
@@ -57,20 +57,19 @@ def index():
 
 @app.route('/venues')
 def venues():
-  # TODO: num_shows should be aggregated based on number of upcoming shows per venue.
   data = []
   locales = db.session.query(Venue.city, Venue.state).group_by(Venue.city, Venue.state).all()
   for locale in locales:
     data.append({
       'city': locale[0],
       'state': locale[1],
-      'venues': Venue.query.filter_by(city=locale[0], state=locale[1]).all(),
+      'venues': Venue.query.filter_by(city = locale[0], state = locale[1]).all(),
       })
-  return render_template('pages/venues.html', areas=data);
+  return render_template('pages/venues.html', areas = data);
 
-# Venues search
+# Implement venues search
 
-@app.route('/venues/search', methods=['POST'])
+@app.route('/venues/search', methods = ['POST'])
 def search_venues():
   search_term = request.form.get('search_term', '')
   data = Venue.query.filter(Venue.name.ilike('%' + search_term + '%')).all()
@@ -78,7 +77,7 @@ def search_venues():
     'count': len(data),
     'data': data
   }
-  return render_template('pages/search_venues.html', results=response, search_term=search_term)
+  return render_template('pages/search_venues.html', results = response, search_term = search_term)
 
 # Show venue page
 
@@ -101,81 +100,76 @@ def show_venue(venue_id):
   if venue:
     return render_template(
       'pages/show_venue.html',
-      venue=data,
-      venue_edit_link = url_for('edit_venue', venue_id=venue_id)
+      venue = data,
+      venue_edit_link = url_for('edit_venue', venue_id = venue_id)
     )
   else:
     abort(404)
 
 # Add a new venue
 
-@app.route('/venues/create', methods=['GET'])
+@app.route('/venues/create', methods = ['GET'])
 def create_venue_form():
   form = VenueForm()
-  return render_template('forms/new_venue.html', form=form)
+  return render_template('forms/new_venue.html', form = form)
 
-@app.route('/venues/create', methods=['POST'])
+@app.route('/venues/create', methods = ['POST'])
 def create_venue_submission():
-  venue_data = {
-    'name': request.form.get('name'),
-    'city': request.form.get('city'),
-    'state': request.form.get('state'),
-    'address': request.form.get('address'),
-    'phone': request.form.get('phone'),
-    'genres': request.form.get('genres'),
-    'image_link': request.form.get('image_link'),
-    'website': request.form.get('website'),
-    'facebook_link': request.form.get('facebook_link'),
-    'seeking_talent': request.form.get('seeking_talent'),
-    'seeking_description': request.form.get('seeking_description')
-  }
-  
   error = False
-  body = {}
+  venue_id = 0
+  form = VenueForm(request.form)
+
+  if not form.validate():
+    flash(form.errors)
+    return redirect(url_for(['create_venue_submission']))
+
   try:
     genres = []
-    for genre in venue_data['genres']:
+    for genre in form.genres.data:
       genres.append( Genre.query.get( genre ) )
 
     venue = Venue(
-      name = venue_data['name'],
-      slug = slugify(venue_data['name']),
-      city = venue_data['city'],
-      state = venue_data['state'],
-      address = venue_data['address'],
-      phone = venue_data['phone'],
+      name = form.name.data,
+      slug = slugify(form.name.data),
+      city = form.city.data,
+      state = form.state.data,
+      address = form.address.data,
+      phone = form.phone.data,
       genres = genres,
-      image_link = venue_data['image_link'],
-      website = venue_data['website'],
-      facebook_link = venue_data['facebook_link'],
-      seeking_talent = bool(venue_data['seeking_talent']),
-      seeking_description = venue_data['seeking_description']
+      image_link = form.image_link.data,
+      website = form.website.data,
+      facebook_link = form.facebook_link.data,
+      seeking_talent = form.seeking_talent.data,
+      seeking_description = form.seeking_description.data
     )
     db.session.add(venue)
     db.session.commit()
-    body['id'] = venue.id
+    venue_id = venue.id
+
   except:
     error = True
     db.session.rollback()
     exc_type, exc_value, exc_traceback = sys.exc_info()
 
     print("*** print_exception:")
-    traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+    traceback.print_exception(exc_type, exc_value, exc_traceback, limit = 2, file = sys.stdout)
 
   finally:
     db.session.close()
+
   if not error:
-    flash('Venue ' + venue_data['name'] + ' was successfully added!')
-    return redirect(url_for('show_venue', venue_id=int(body['id'])))
+    flash('Venue ' + form.name.data + ' was successfully added!')
+    return redirect(url_for('show_venue', venue_id = venue_id))
+
   else:
-    flash('An error occurred. Venue ' + venue_data['name'] + ' could not be created.')
+    flash('An error occurred. Venue ' + form.name.data + ' could not be created.')
     abort(500)
 
   return render_template('pages/home.html')
 
-# Edit a venue
+# Edit an existing venue
 
-@app.route('/venues/<int:venue_id>/edit', methods=['GET'])
+@app.route('/venues/<int:venue_id>/edit', methods = ['GET'])
 def edit_venue(venue_id):
   venue = Venue.query.get(venue_id)
   form = VenueForm(obj=venue)
@@ -185,19 +179,19 @@ def edit_venue(venue_id):
   form.genres.data = genres
   return render_template(
     'forms/edit_venue.html',
-    form=form,
-    venue=venue,
-    delete_venue_link = url_for('delete_venue', venue_id=venue_id)
+    form = form,
+    venue = venue,
+    delete_venue_link = url_for('delete_venue', venue_id = venue_id)
   )
 
-@app.route('/venues/<int:venue_id>/edit', methods=['POST'])
+@app.route('/venues/<int:venue_id>/edit', methods = ['POST'])
 def edit_venue_submission(venue_id):
   error = False
   form = VenueForm(request.form)
   try:
     genres = []
     for genre in form.genres.data:
-      genres.append( Genre.query.get( genre ) )
+      genres.append( Genre.query.get( genre ))
 
     venue = Venue.query.get(venue_id)
     venue.name = form.name.data
@@ -212,39 +206,44 @@ def edit_venue_submission(venue_id):
     venue.seeking_talent = form.seeking_talent.data
     venue.seeking_description = form.seeking_description.data
     db.session.commit()
+
   except:
     error = True
     db.session.rollback()
     exc_type, exc_value, exc_traceback = sys.exc_info()
 
     print("*** print_exception:")
-    traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+    traceback.print_exception(exc_type, exc_value, exc_traceback, limit = 2, file = sys.stdout)
 
   finally:
     db.session.close()
+
   if not error:
-    return redirect(url_for('show_venue', venue_id=venue_id))
+    return redirect(url_for('show_venue', venue_id = venue_id))
+
   else:
     abort(500)
 
-  return redirect(url_for('show_venue', venue_id=venue_id))
+  return redirect(url_for('show_venue', venue_id = venue_id))
 
 # Delete a venue
 
-@app.route('/venues/<venue_id>/delete', methods=['GET'])
+@app.route('/venues/<venue_id>/delete', methods = ['GET'])
 def delete_venue(venue_id):
   try:
-    venue = Venue.query.filter_by(id=venue_id)
+    venue = Venue.query.filter_by(id = venue_id)
     venue.genres = []
     venue.delete()
     db.session.commit()
+
   except:
     error = True
     db.session.rollback()
     exc_type, exc_value, exc_traceback = sys.exc_info()
 
     print("*** print_exception:")
-    traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+    traceback.print_exception(exc_type, exc_value, exc_traceback, limit = 2, file = sys.stdout)
+
   finally:
     db.session.close()
 
@@ -258,20 +257,20 @@ def delete_venue(venue_id):
 
 @app.route('/artists')
 def artists():
-  data=Artist.query.all()
-  return render_template('pages/artists.html', artists=data)
+  data = Artist.query.all()
+  return render_template('pages/artists.html', artists = data)
 
 # Search artists
 
-@app.route('/artists/search', methods=['POST'])
+@app.route('/artists/search', methods = ['POST'])
 def search_artists():
   search_term = request.form.get('search_term', '')
   data = Artist.query.filter(Artist.name.ilike('%' + search_term + '%')).all()
-  response={
+  response = {
     "count": len(data),
     "data": data
   }
-  return render_template('pages/search_artists.html', results=response, search_term=search_term)
+  return render_template('pages/search_artists.html', results = response, search_term = search_term)
 
 # Show artist page
 
@@ -294,80 +293,76 @@ def show_artist(artist_id):
   if artist:
     return render_template(
       'pages/show_artist.html',
-      artist=data,
-      artist_edit_link = url_for('edit_artist', artist_id=artist_id)
+      artist = data,
+      artist_edit_link = url_for('edit_artist', artist_id = artist_id)
     )
   else:
     abort(404)
 
 # Add a new artist
 
-@app.route('/artists/create', methods=['GET'])
+@app.route('/artists/create', methods = ['GET'])
 def create_artist_form():
   form = ArtistForm()
-  return render_template('forms/new_artist.html', form=form)
+  return render_template('forms/new_artist.html', form = form)
 
-@app.route('/artists/create', methods=['POST'])
+@app.route('/artists/create', methods = ['POST'])
 def create_artist_submission():
-  artist_data = {
-    'name': request.form.get('name'),
-    'city': request.form.get('city'),
-    'state': request.form.get('state'),
-    'address': request.form.get('address'),
-    'phone': request.form.get('phone'),
-    'genres': request.form.get('genres'),
-    'image_link': request.form.get('image_link'),
-    'website': request.form.get('website'),
-    'facebook_link': request.form.get('facebook_link'),
-    'seeking_venues': request.form.get('seeking_venues'),
-    'seeking_description': request.form.get('seeking_description')
-  }
-  
   error = False
-  body = {}
+  artist_id = 0
+  print( request.form )
+  form = ArtistForm(request.form)
+  print( form.genres.data )
+
+  if not form.validate():
+    flash(form.errors)
+    return redirect(url_for(['create_artist_submission']))
   try:
     genres = []
-    for genre in artist_data['genres']:
+    for genre in form.genres.data:
       genres.append( Genre.query.get( genre ) )
 
     artist = Artist(
-      name = artist_data['name'],
-      slug = slugify(artist_data['name']),
-      city = artist_data['city'],
-      state = artist_data['state'],
-      phone = artist_data['phone'],
+      name = form.name.data,
+      slug = slugify(form.name.data),
+      city = form.city.data,
+      state = form.state.data,
+      phone = form.phone.data,
       genres = genres,
-      image_link = artist_data['image_link'],
-      website = artist_data['website'],
-      facebook_link = artist_data['facebook_link'],
-      seeking_venues = bool(artist_data['seeking_venues']),
-      seeking_description = artist_data['seeking_description']
+      image_link = form.image_link.data,
+      website = form.website.data,
+      facebook_link = form.facebook_link.data,
+      seeking_venues = form.seeking_venues.data,
+      seeking_description = form.seeking_description.data
     )
     db.session.add(artist)
     db.session.commit()
-    body['id'] = artist.id
+    artist_id = artist.id
+
   except:
     error = True
     db.session.rollback()
     exc_type, exc_value, exc_traceback = sys.exc_info()
 
     print("*** print_exception:")
-    traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+    traceback.print_exception(exc_type, exc_value, exc_traceback, limit = 2, file = sys.stdout)
 
   finally:
     db.session.close()
+
   if not error:
     flash('Artist ' + request.form['name'] + ' was successfully created!')
-    return redirect(url_for('show_artist', artist_id=int(body['id'])))
+    return redirect(url_for('show_artist', artist_id = artist_id))
+
   else:
-    flash('An error occurred. ' + artist_data.name + ' could not be added.')
+    flash('An error occurred. ' + form.name.data + ' could not be added.')
     abort(500)
 
   return render_template('pages/home.html')
 
-# Edit artist 
+# Edit an existing artist 
 
-@app.route('/artists/<int:artist_id>/edit', methods=['GET'])
+@app.route('/artists/<int:artist_id>/edit', methods = ['GET'])
 def edit_artist(artist_id):
   artist = Artist.query.get(artist_id)
   form = ArtistForm(obj=artist)
@@ -379,10 +374,10 @@ def edit_artist(artist_id):
     'forms/edit_artist.html',
     form=form,
     artist=artist,
-    delete_artist_link = url_for('delete_artist', artist_id=artist_id)
+    delete_artist_link = url_for('delete_artist', artist_id = artist_id)
   )
 
-@app.route('/artists/<int:artist_id>/edit', methods=['POST'])
+@app.route('/artists/<int:artist_id>/edit', methods = ['POST'])
 def edit_artist_submission(artist_id):  
   error = False
   form = ArtistForm(request.form)
@@ -404,39 +399,44 @@ def edit_artist_submission(artist_id):
     artist.seeking_venues = form.seeking_venues.data
     artist.seeking_description = form.seeking_description.data
     db.session.commit()
+
   except:
     error = True
     db.session.rollback()
     exc_type, exc_value, exc_traceback = sys.exc_info()
 
     print("*** print_exception:")
-    traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+    traceback.print_exception(exc_type, exc_value, exc_traceback, limit = 2, file = sys.stdout)
 
   finally:
     db.session.close()
+
   if not error:
-    return redirect(url_for('show_artist', artist_id=artist_id))
+    return redirect(url_for('show_artist', artist_id = artist_id))
+
   else:
     abort(500)
 
-  return redirect(url_for('show_artist', artist_id=artist_id))
+  return redirect(url_for('show_artist', artist_id = artist_id))
 
 # Delete an artist
 
-@app.route('/artists/<artist_id>/delete', methods=['GET'])
+@app.route('/artists/<artist_id>/delete', methods = ['GET'])
 def delete_artist(artist_id):
   try:
     artist = Artist.query.filter_by(id=artist_id)
     artist.genres = []
     artist.delete()
     db.session.commit()
+
   except:
     error = True
     db.session.rollback()
     exc_type, exc_value, exc_traceback = sys.exc_info()
 
     print("*** print_exception:")
-    traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+    traceback.print_exception(exc_type, exc_value, exc_traceback, limit = 2, file = sys.stdout)
+
   finally:
     db.session.close()
 
@@ -461,14 +461,14 @@ def shows():
       'artist_image_link': show.artist.image_link,
       'start_time': show.start_time.isoformat()
     })
-  return render_template('pages/shows.html', shows=data)
+  return render_template('pages/shows.html', shows = data)
 
 @app.route('/shows/create')
 def create_shows():
   form = ShowForm()
-  return render_template('forms/new_show.html', form=form)
+  return render_template('forms/new_show.html', form = form)
 
-@app.route('/shows/create', methods=['POST'])
+@app.route('/shows/create', methods = ['POST'])
 def create_show_submission():
   error = False
   form = ShowForm(request.form)
@@ -480,23 +480,30 @@ def create_show_submission():
     )
     db.session.add(show)
     db.session.commit()
+
   except:
     error = True
     db.session.rollback()
     exc_type, exc_value, exc_traceback = sys.exc_info()
 
     print("*** print_exception:")
-    traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+    traceback.print_exception(exc_type, exc_value, exc_traceback, limit = 2, file = sys.stdout)
 
   finally:
     db.session.close()
+
   if not error:
     flash('Show was successfully listed!')
+
   else:
     flash('An error occurred. Show could not be listed.')
     abort(500)
 
   return redirect(url_for('shows'))
+
+#----------------------------------------------------------------------------#
+# Error handlers
+#----------------------------------------------------------------------------#
 
 @app.errorhandler(404)
 def not_found_error(error):
@@ -505,7 +512,6 @@ def not_found_error(error):
 @app.errorhandler(500)
 def server_error(error):
     return render_template('errors/500.html'), 500
-
 
 if not app.debug:
     file_handler = FileHandler('error.log')

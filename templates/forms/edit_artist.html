@@ -3,6 +3,7 @@
 {% block content %}
   <div class="form-wrapper">
     <form class="form" method="post" action="/artists/{{artist.id}}/edit">
+      {{ form.csrf_token }}
       <h3 class="form-heading">Edit artist <em>{{ artist.name }}</em></h3>
       <a href="{{ delete_artist_link }}" class="btn btn-warning">Delete</a>
       <div class="form-group">

@@ -39,7 +39,7 @@ venue_genre_relationship = db.Table('venue_genre_relationship',
 # Creating relationship to connect Genre categories to Artist table
 artist_genre_relationship = db.Table('artist_genre_relationship',
     db.Column('genre_id', db.Integer, db.ForeignKey('Genre.id')),
-    db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id', ondelete='cascade')),
+    db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id', ondelete = 'cascade')),
     db.Column('id', db.Integer, primary_key = True)
 )
 

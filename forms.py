@@ -1,10 +1,19 @@
 from datetime import datetime
 from flask_wtf import Form
-from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
+from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, ValidationError
 from wtforms.validators import DataRequired, AnyOf, URL
 from models import *
+from utils import *
 
-# load genres from database for New Artist and New Venue forms
+# Set up genre validation
+def validate_genres(form, field):
+    if not field.data:
+        raise ValidationError('Genre invalid.')
+    for genre_value in field.data:
+        if not Genre.query.get( genre_value ):
+            raise ValidationError('Invalid genre choice!')
+
+# Load genres from database for artist and venue forms
 
 def get_genres_for_form():
     genre_choices = []
@@ -12,7 +21,7 @@ def get_genres_for_form():
         genre_choices.append(( genre.id, genre.name ))
     return genre_choices
 
-# load artists for show form
+# Load artists from database for shows form
 
 def get_artists_for_form():
     artist_choices = [
@@ -22,7 +31,7 @@ def get_artists_for_form():
         artist_choices.append(( artist.id, artist.name ))
     return artist_choices
 
-# load venues for show form 
+# Load venues from database for shows form
 
 def get_venues_for_form():
     venue_choices = [
@@ -32,187 +41,107 @@ def get_venues_for_form():
         venue_choices.append(( venue.id, venue.name ))
     return venue_choices
 
+# Show form
+
 class ShowForm(Form):
     artist_id = SelectField(
         'artist_id',
-        validators=[DataRequired()],
+        validators = [DataRequired()],
         choices = get_artists_for_form()
     )
+
     venue_id = SelectField(
         'venue_id',
-        validators=[DataRequired()],
+        validators = [DataRequired()],
         choices = get_venues_for_form()
     )
+
     start_time = DateTimeField(
         'start_time',
-        validators=[DataRequired()],
-        default= datetime.today()
+        validators = [DataRequired()],
+        default = datetime.today()
     )
 
 # Venue form
 
 class VenueForm(Form):
     name = StringField(
-        'name', validators=[DataRequired()]
+        'name',
+        validators = [DataRequired()]
     )
+
     city = StringField(
-        'city', validators=[DataRequired()]
+        'city',
+        validators = [DataRequired()]
     )
+
     state = SelectField(
-        'state', validators=[DataRequired()],
-        choices=[
-            ('AL', 'AL'),
-            ('AK', 'AK'),
-            ('AZ', 'AZ'),
-            ('AR', 'AR'),
-            ('CA', 'CA'),
-            ('CO', 'CO'),
-            ('CT', 'CT'),
-            ('DE', 'DE'),
-            ('DC', 'DC'),
-            ('FL', 'FL'),
-            ('GA', 'GA'),
-            ('HI', 'HI'),
-            ('ID', 'ID'),
-            ('IL', 'IL'),
-            ('IN', 'IN'),
-            ('IA', 'IA'),
-            ('KS', 'KS'),
-            ('KY', 'KY'),
-            ('LA', 'LA'),
-            ('ME', 'ME'),
-            ('MT', 'MT'),
-            ('NE', 'NE'),
-            ('NV', 'NV'),
-            ('NH', 'NH'),
-            ('NJ', 'NJ'),
-            ('NM', 'NM'),
-            ('NY', 'NY'),
-            ('NC', 'NC'),
-            ('ND', 'ND'),
-            ('OH', 'OH'),
-            ('OK', 'OK'),
-            ('OR', 'OR'),
-            ('MD', 'MD'),
-            ('MA', 'MA'),
-            ('MI', 'MI'),
-            ('MN', 'MN'),
-            ('MS', 'MS'),
-            ('MO', 'MO'),
-            ('PA', 'PA'),
-            ('RI', 'RI'),
-            ('SC', 'SC'),
-            ('SD', 'SD'),
-            ('TN', 'TN'),
-            ('TX', 'TX'),
-            ('UT', 'UT'),
-            ('VT', 'VT'),
-            ('VA', 'VA'),
-            ('WA', 'WA'),
-            ('WV', 'WV'),
-            ('WI', 'WI'),
-            ('WY', 'WY'),
-        ]
+        'state',
+        validators = [
+            DataRequired(),
+            AnyOf( [state.value for state in State] )
+        ],
+        choices = State.choices()
     )
-    # TODO implement validation logic for state
+
     address = StringField(
         'address', validators=[DataRequired()]
     )
+
     phone = StringField(
         'phone'
     )
+
     image_link = StringField(
         'image_link'
     )
+
     genres = SelectMultipleField(
         'genres', 
-        validators=[DataRequired()],
-        coerce=int,
-        choices=get_genres_for_form()
+        validators = [
+            validate_genres
+        ],
+        coerce = int,
+        choices = get_genres_for_form()
     )
+
     website = StringField(
-        'website', validators=[URL()]
+        'website', validators = [URL()]
     )
+
     facebook_link = StringField(
-        'facebook_link', validators=[URL()]
+        'facebook_link', validators = [URL()]
     )
+
     seeking_talent = BooleanField(
         'seeking_talent'
     )
+
     seeking_description = StringField(
         'seeking_description'
     )
 
-## Artist form
+# Artist form
 
 class ArtistForm(Form):
     name = StringField(
         'name',
-        validators=[DataRequired()]
+        validators = [DataRequired()]
     )
 
     city = StringField(
-        'city', validators=[DataRequired()]
+        'city', validators = [DataRequired()]
     )
 
     state = SelectField(
-        'state', validators=[DataRequired()],
-        choices=[
-            ('AL', 'AL'),
-            ('AK', 'AK'),
-            ('AZ', 'AZ'),
-            ('AR', 'AR'),
-            ('CA', 'CA'),
-            ('CO', 'CO'),
-            ('CT', 'CT'),
-            ('DE', 'DE'),
-            ('DC', 'DC'),
-            ('FL', 'FL'),
-            ('GA', 'GA'),
-            ('HI', 'HI'),
-            ('ID', 'ID'),
-            ('IL', 'IL'),
-            ('IN', 'IN'),
-            ('IA', 'IA'),
-            ('KS', 'KS'),
-            ('KY', 'KY'),
-            ('LA', 'LA'),
-            ('ME', 'ME'),
-            ('MT', 'MT'),
-            ('NE', 'NE'),
-            ('NV', 'NV'),
-            ('NH', 'NH'),
-            ('NJ', 'NJ'),
-            ('NM', 'NM'),
-            ('NY', 'NY'),
-            ('NC', 'NC'),
-            ('ND', 'ND'),
-            ('OH', 'OH'),
-            ('OK', 'OK'),
-            ('OR', 'OR'),
-            ('MD', 'MD'),
-            ('MA', 'MA'),
-            ('MI', 'MI'),
-            ('MN', 'MN'),
-            ('MS', 'MS'),
-            ('MO', 'MO'),
-            ('PA', 'PA'),
-            ('RI', 'RI'),
-            ('SC', 'SC'),
-            ('SD', 'SD'),
-            ('TN', 'TN'),
-            ('TX', 'TX'),
-            ('UT', 'UT'),
-            ('VT', 'VT'),
-            ('VA', 'VA'),
-            ('WA', 'WA'),
-            ('WV', 'WV'),
-            ('WI', 'WI'),
-            ('WY', 'WY'),
-        ]
+        'state',
+        validators = [
+            DataRequired(),
+            AnyOf([state.value for state in State])
+        ],
+        choices = State.choices()
     )
 
-    # TODO implement validation logic for state
     phone = StringField(
         'phone'
     )
@@ -222,16 +151,19 @@ class ArtistForm(Form):
     )
 
     genres = SelectMultipleField(
-        'genres', validators=[DataRequired()],
-        choices=get_genres_for_form()
+        'genres', 
+        validators = [
+            validate_genres
+        ],
+        coerce = int,
+        choices = get_genres_for_form()
     )
 
     website = StringField(
-        'website', validators=[URL()]
+        'website', validators = [URL()]
     )
 
     facebook_link = StringField(
-        # TODO implement enum restriction
         'facebook_link', validators=[URL()]
     )
 
